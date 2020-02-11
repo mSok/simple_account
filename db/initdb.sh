@@ -1,8 +1,10 @@
 #!/bin/bash
 psql -h "$DB_HOST" --username "$DB_USER" -d "postgres"  <<-EOSQL
-CREATE DATABASE $DB_NAME;
+CREATE DATABASE account;
+SELECT current_database();
 EOSQL
-psql -v ON_ERROR_STOP=1 -h "$DB_HOST" --username "$DB_USER" -d "$DB_NAME"  <<-EOSQL
+psql -v ON_ERROR_STOP=1 -h "$DB_HOST" --username "$DB_USER" -d account  <<-EOSQL
+    SELECT current_database();
     CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
     CREATE TABLE IF NOT EXISTS public.accounts (
         id uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,

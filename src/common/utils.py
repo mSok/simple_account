@@ -21,9 +21,12 @@ GOOD_RES = (200, 201)
 
 class ResponseTemplate:
     """Ответ сериализованный в JSON"""
-    def __init__(self, status: int,  addition={}, description={}):
+    def __init__(self, status: int, addition={}, description={}, result=None):
+        if result is None:
+            self.result = True if status in GOOD_RES else False
+        else:
+            self.result = result
         self.status = status
-        self.result = True if status in GOOD_RES else False
         self.addition = addition
         self.description = description
 

@@ -1,0 +1,39 @@
+version: '3.7'
+
+networks:
+    app:
+        driver: bridge
+
+services:
+    postgres:
+        build:
+            context: ./db
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-postgres}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+            PGDATA: /var/lib/postgresql/data/pgdata
+        volumes:
+            - ./db/data/postgres:/var/lib/postgresql/data/pgdata
+        ports:
+        - 5432:5432
+        networks:
+        - app
+        restart: on-failure:3
+
+    account:
+        image: account:latest
+        build:
+            context: ./src
+        networks:
+            - app
+        environment:
+            DB_HOST: ${DB_HOST:-postgres}
+            DB_NAME: ${DB_NAME:-account}
+            DB_USER: ${DB_USER:-postgres}
+            DB_PASSWORD: ${DB_PASSWORD:-}
+            LOG: ${LOG:-DEBUG}
+        ports:
+            - 8080:8080
+        restart: on-failure:3
+        depends_on:
+            - postgres

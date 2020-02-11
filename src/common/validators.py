@@ -21,5 +21,5 @@ def uuid_validate(account_id):
 def db_validate(request):
     pool = request.app.get('pool')
     if not pool:
-        raise DBException('message broken')
+        raise DBException('Service broken (db not connected)')
     return pool

@@ -10,7 +10,17 @@ class Account:
     def __init__(self, conn):
         self._conn = conn
 
-    async def add(self, account_id: uuid.UUID, amount):
+    async def add(self, account_id, amount):
+        """Пополнение баланса
+
+        Args:
+            account_id: номер счета
+            amount: сумма на которую пополняем
+
+        Returns:
+            JSON формата ResponseTemplate
+        """
+
         try:
             amount = int(amount)
             if amount < 0:
@@ -58,7 +68,25 @@ class Account:
         return ResponseTemplate(200, dict(res)).response()
 
     async def substract(self, account_id, amount):
+        """ Уменьшение баланса
+
+        Args:
+            account_id: номер счета
+            amount: сумма для вычитания
+
+        Returns:
+            JSON формата ResponseTemplate
+        """
         # TODO Возможно есть смысл сделать через SELECT FOR UPDATE
+        try:
+            amount = int(amount)
+            if amount < 0:
+                raise ValueError('Пополнять баланс можно только положительной суммой')
+            if account_id is None or amount is None:
+                raise TypeError('Некорректные входные данные')
+        except (ValueError, TypeError) as exc:
+            return ResponseTemplate(400, None, {'message': str(exc)}).response()
+
         res = await self._conn.fetchrow('''
             UPDATE accounts
             SET hold = hold + $1
