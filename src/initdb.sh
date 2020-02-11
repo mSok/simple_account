@@ -7,8 +7,8 @@ psql -v ON_ERROR_STOP=1 -h "$DB_HOST" --username "$DB_USER" -d "$DB_NAME"  <<-EO
     CREATE TABLE IF NOT EXISTS public.accounts (
         id uuid DEFAULT public.uuid_generate_v4() PRIMARY KEY,
         fio character varying(225) NOT NULL,
-        hold decimal NOT NULL,
-        current_balans decimal NOT NULL,
+        hold INT NOT NULL,
+        current_balans INT NOT NULL,
         status boolean DEFAULT true
     );
     INSERT INTO public.accounts(id, fio, "hold", current_balans, status)

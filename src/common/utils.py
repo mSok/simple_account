@@ -2,7 +2,6 @@
 import uuid
 import json
 import functools
-from decimal import Decimal
 
 from aiohttp import web
 
@@ -11,9 +10,6 @@ def serialize_helpers(obj):
     """Нестандартные функции сериализации для сложных типов"""
     if isinstance(obj, uuid.UUID):
         return obj.hex
-    if isinstance(obj, Decimal):
-        return str(obj)
-
     raise TypeError('Unable to serialize {!r}'.format(obj))
 
 

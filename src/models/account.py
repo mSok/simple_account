@@ -1,6 +1,5 @@
 # TODO Комментарии пересмотреть, написать валидаторы и тесты. + периодичная таска не готова
 import uuid
-from decimal import Decimal, InvalidOperation
 from common.utils import ResponseTemplate
 
 
@@ -13,12 +12,12 @@ class Account:
 
     async def add(self, account_id: uuid.UUID, amount):
         try:
-            amount = Decimal(amount)
+            amount = int(amount)
             if amount < 0:
                 raise ValueError('Пополнять баланс можно только положительной суммой')
             if account_id is None or amount is None:
                 raise TypeError('Некорректные входные данные')
-        except (InvalidOperation, ValueError, TypeError) as exc:
+        except (ValueError, TypeError) as exc:
             return ResponseTemplate(400, None, {'message': str(exc)}).response()
 
         try:
