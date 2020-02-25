@@ -5,6 +5,7 @@ from aiohttp import web
 import config
 from common.db import connect_db
 from controllers import accounts_api as api
+from common.tasks import calc_balance
 
 
 async def init_app():
@@ -28,4 +29,7 @@ if __name__ == "__main__":
 
     loop = asyncio.get_event_loop()
     app = loop.run_until_complete(init_app())
-    web.run_app(app, port=8089)
+    # Запуск периодической таски ( раз в 10 минут пересчитываем баланс)
+    loop.create_task(calc_balance(app['pool'], 60 * 10))
+    logging.warning('Starting on 8080 ...')
+    web.run_app(app, port=8080)

@@ -5,6 +5,19 @@ networks:
         driver: bridge
 
 services:
+    nginx:
+        container_name: tochka_nginx
+        image: nginx
+        volumes:
+            - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+        networks:
+          - app
+        ports:
+            - 80:80
+        depends_on:
+          - postgres
+          - account
+        restart: on-failure:3
     postgres:
         build:
             context: ./db
@@ -27,11 +40,11 @@ services:
         networks:
             - app
         environment:
-            DB_HOST: ${DB_HOST:-postgres}
-            DB_NAME: ${DB_NAME:-account}
-            DB_USER: ${DB_USER:-postgres}
-            DB_PASSWORD: ${DB_PASSWORD:-}
-            LOG: ${LOG:-DEBUG}
+            - DB_HOST
+            - DB_NAME
+            - DB_USER
+            - DB_PASSWORD
+            - LOG
         ports:
             - 8080:8080
         restart: on-failure:3

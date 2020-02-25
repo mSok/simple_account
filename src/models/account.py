@@ -1,5 +1,3 @@
-# TODO Комментарии пересмотреть, написать валидаторы и тесты. + периодичная таска не готова
-import uuid
 from common.utils import ResponseTemplate
 
 
@@ -31,10 +29,18 @@ class Account:
             return ResponseTemplate(400, None, {'message': str(exc)}).response()
 
         try:
-            res = await self._conn.fetchrow('''
-                UPDATE accounts
-                SET current_balans = current_balans + $1
-                WHERE id = $2 RETURNING *''', amount, account_id)
+            async with self._conn.transaction():
+                account_state = await self._conn.fetchval('''
+                    SELECT status
+                    FROM accounts
+                    WHERE id = $1
+                    FOR UPDATE''', account_id)
+                if not account_state:
+                    return ResponseTemplate(400, None, {'message': 'Ваш счет закрыт'}).response()
+                res = await self._conn.fetchrow('''
+                    UPDATE accounts
+                    SET current_balans = current_balans + $1
+                    WHERE id = $2 RETURNING *''', amount, account_id)
         except Exception as exc:
             return ResponseTemplate(500, None, {'message': str(exc)}).response()
 
@@ -77,23 +83,37 @@ class Account:
         Returns:
             JSON формата ResponseTemplate
         """
-        # TODO Возможно есть смысл сделать через SELECT FOR UPDATE
         try:
             amount = int(amount)
             if amount < 0:
-                raise ValueError('Пополнять баланс можно только положительной суммой')
+                raise ValueError('Снимать с баланса можно только положительную сумму')
             if account_id is None or amount is None:
                 raise TypeError('Некорректные входные данные')
         except (ValueError, TypeError) as exc:
             return ResponseTemplate(400, None, {'message': str(exc)}).response()
 
-        res = await self._conn.fetchrow('''
-            UPDATE accounts
-            SET hold = hold + $1
-            WHERE id = $2
-                AND current_balans - hold - $1 > 0
-            RETURNING *
-        ''', amount, account_id)
-        if not res:
-            return ResponseTemplate(400, None, {'message': 'Недостаточно средств'}).response()
-        return ResponseTemplate(200, dict(res)).response()
+        async with self._conn.transaction():
+            account_state = await self._conn.fetchval('''
+                SELECT status
+                FROM accounts
+                WHERE id = $1
+                FOR UPDATE''', account_id)
+            if not account_state:
+                return ResponseTemplate(400, None, {'message': 'Ваш счет закрыт'}).response()
+            res = await self._conn.fetchrow('''
+                UPDATE accounts
+                SET hold = hold + $1
+                WHERE id = $2
+                    AND current_balans - hold - $1 >= 0
+                RETURNING *
+            ''', amount, account_id)
+            if not res:
+                return ResponseTemplate(400, None, {'message': 'Недостаточно средств'}).response()
+            return ResponseTemplate(200, dict(res)).response()
+
+    async def calc_balance(self):
+        async with self._conn.transaction():
+            return await self._conn.fetchrow(f'''
+                UPDATE accounts
+                SET current_balans = current_balans - hold, hold = 0
+                WHERE hold > 0''')
